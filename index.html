@@ -39,9 +39,22 @@
 		.scrollPage{position: relative;width:640px;}
 		.scrollPage .page{width: 100%;height: 100%;overflow: hidden;position: absolute;display: none;-webkit-transition-timing-function: ease-in-out;}
 		.scrollPage .page.active{display: block;}
-		.scrollPage .arrow{position: fixed;left: 50%;bottom:80px;}
-		.scrollPage .arrow p{position: absolute;margin-left: -25px;height: 28px;width: 50px;background: url(arrow.png) no-repeat;}
+		.arrow{position: fixed;left: 50%;
+			animation:arrow 1.5s infinite ease-in-out;
+			-moz-animation:arrow 1.5s infinite ease-in-out; /* Firefox */
+			-webkit-animation:arrow 1.5s infinite ease-in-out; /* Safari and Chrome */
+			-o-animation:arrow 1.5s infinite ease-in-out; /* Opera */
+		}
+		.arrow p{position: absolute;margin-left: -25px;height: 28px;width: 50px;background: url(arrow.png) no-repeat;
+		}
 
+		@-webkit-keyframes arrow
+		{
+			0%   {bottom:75px;opacity: 0}
+			45%  {bottom:90px;opacity: 1}
+			55%  {bottom:90px;opacity: 1}
+			100% {bottom:100px;opacity: 0}
+		}
 		.p1{background-color: gray;background: url(n_5417dc9238d0d.jpg);}
 		.p2{background-color: green;background: url(n_5417dc9645d0c.jpg);}
 		.p3{background-color: lightblue;background: url(n_5417dc993abcb.jpg);}
@@ -61,12 +74,15 @@
 
 window.onload = function()
 {
-	var sp = new ScrollPage(document.getElementById("scrollPage"));
+	sp = new ScrollPage(document.getElementById("scrollPage"));
 	var config = {
-			duration : 300,//页面切换时间
+			duration :300,//页面切换时间
 			usingScale : true,//使用换页缩放效果
 			scale : "0.8",//缩放比例
 			threshold:100,//换页临界值
+			fn_initCallback : function(){
+				console.log("自定义初始化后触发");
+			},
 			fn_touchSliding://回调函数，触摸移动时候触发
 				['','',function(){
 				console.log(33333333333333)}
@@ -74,22 +90,31 @@ window.onload = function()
 			fn_afterSliding://回调函数，移动换页结束后触发
 				[function(){
 				console.log("123123");
+				},function(){
+				console.log("完成跳到第二页");
 				}],
 			fn_startSlideToPage://回调函数，触摸滑动放开手指并开始换页时触发
 			[function(){console.log("开始移动至第一页")}]
 	};
 	sp.init(config);
+
+	document.getElementById("ab").onclick = function(){alert(1)}
 }
 
 </script>
 <div id="scrollPage" class="scrollPage">
-	<div class="page p1 active">1</div>
+	<div class="page p1 active"><div style="width:500px;height:500px;background-color:green" id="ab"></div></div>
 	<div class="page p2">2</div>
 	<div class="page p3">3</div>
 	<div class="page p4">4</div>
-	<div class="arrow">
+	<div class="page p4">4</div>
+	<div class="page p4">4</div>
+	<div class="page p4">4</div>
+	<div class="page p4">4</div>
+	<div class="page p4">4</div>
+</div>
+<div class="arrow">
 		<p></p>
 	</div>
-</div>
 </body>
 </html>
