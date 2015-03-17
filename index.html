@@ -11,7 +11,7 @@
 	<meta http-equiv="pragram" content="no-cache">
 	<LINK href="favicon.ico" type="image/x-icon" rel=icon>
 	<LINK href="favicon.ico" type="image/x-icon" rel="shortcut icon">
-	<script type="text/javascript" src="aron-ScrollPage.min.js"></script>
+	<script type="text/javascript" src="aron-ScrollPage.js"></script>
 	<script type="text/javascript">
 		var mengvalue = -1;
 		//if(mengvalue<0){mengvalue=0;}
@@ -65,7 +65,7 @@
 		.p8{background-color: red;background: url(n_5417dc9238d0d.jpg);}
 		.p9{background-color: red;background: url(n_5417dc9238d0d.jpg);}
 
-		
+		#coverLayer{width:100%;height: 100%;position: fixed;z-index: 0;top:0;left: 0;}
 
 	</style>
 </head>
@@ -74,11 +74,12 @@
 
 window.onload = function()
 {
-	sp = new ScrollPage(document.getElementById("scrollPage"));
+	var obj = document.getElementById("scrollPage");
 	var config = {
 			duration :300,//页面切换时间
-			usingScale : true,//使用换页缩放效果
-			scale : "0.8",//缩放比例
+			slideMode : "normal",//normal->触摸滑动时候页面跟随移动,static->触摸滑动时候页面静止，
+			mode : "scale",//scale->换页缩放,normal->无缩放平移换页,static->换页时当前页不移动
+			scale : "0.7",//缩放比例
 			threshold:100,//换页临界值
 			fn_initCallback : function(){
 				console.log("自定义初始化后触发");
@@ -96,7 +97,7 @@ window.onload = function()
 			fn_startSlideToPage://回调函数，触摸滑动放开手指并开始换页时触发
 			[function(){console.log("开始移动至第一页")}]
 	};
-	sp.init(config);
+	sp = ScrollPage(obj).init(config);
 
 	document.getElementById("ab").onclick = function(){alert(1)}
 }
@@ -104,7 +105,7 @@ window.onload = function()
 </script>
 <div id="scrollPage" class="scrollPage">
 	<div class="page p1 active"><div style="width:500px;height:500px;background-color:green" id="ab"></div></div>
-	<div class="page p2">2</div>
+	<div class="page p2"><input type=""></div>
 	<div class="page p3">3</div>
 	<div class="page p4">4</div>
 	<div class="page p4">4</div>

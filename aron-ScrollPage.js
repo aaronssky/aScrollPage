@@ -6,7 +6,7 @@
  * @param  {[type]} ele [description]
  * @return {[type]}        [description]
  */
-(function(undefined){
+(function(window,undefined){
 	var dummyStyle = document.createElement('div').style;
 	var	vendor = (function(){
 	        var vendors = ['webkitT','MozT','msT','OT','t'],
@@ -32,11 +32,15 @@
 	}
 
 	function ScrollPage(ele){
-		this.ele = ele;
-		this.ele.style.height = document.documentElement.clientHeight+"px";
+		return new ScrollPage.prototype._init(ele);
 	}
 
 	ScrollPage.prototype = {
+		_init : function(ele){
+			this.ele = ele;
+			this.ele.style.height = document.documentElement.clientHeight+"px";
+			return this;
+		},
 		init : function(config)
 		{
 			this.initData(config?config : {});
@@ -45,6 +49,7 @@
 			addEventHandler(document,isPC()?"mousedown":"touchstart",function(e){
 				e.preventDefault();
 			});
+			return this;
 		},
 		initData : function(config)
 		{
@@ -61,8 +66,10 @@
 			this.fn_startSlideToPage = [];//触摸滑动放开手指并开始换页时
 			this.scrollSuccess = false;
 			this.duration = 500;//500ms -> 0.5s
+			this.mode = "scale";//默认换页效果为缩放换页
 			this.scale = 0.8;
 			this.threshold = 100;
+			this.slideMode = "normal";
 			this.fn_initCallback = function(){
 				console.log("init plugin success");
 			}
@@ -102,12 +109,24 @@
 				})(i));
 			}
 			"duration" in config ? this.duration = config.duration:"";
+			"slideMode" in config && config.slideMode == "static"? this.slideMode = "static" : "";
 			"usingScale" in config ? this.usingScale = !!config.usingScale:"";
-			"scale" in config ? parseFloat(config.scale)>0 && parseFloat(config.scale)<1? (this.scale = parseFloat(config.scale)):"":"";
+			"scale" in config ? parseFloat(config.scale)>0 && parseFloat(config.scale)<=1? (this.scale = parseFloat(config.scale)):"":"";
+			if("mode" in config){
+				if(config.mode == "normal")
+				{
+					this.usingScale = false;
+				}
+				else if(config.mode == "static")
+				{
+					this.usingScale  = true;
+					this.scale = 1;
+				}
+			}
 			"threshold" in config ? this.threshold = config.threshold:"";
 			"fn_initCallback" in config? this.fn_initCallback = config.fn_initCallback:"";
-			this.fn_initCallback();
 			initParam.call(this);
+			this.fn_initCallback.call(this);
 		},
 		bindEvent : function()
 		{
@@ -134,6 +153,7 @@
 			{
 				return false;
 			}
+			this.slideMode == "static" ?this.needToScroll = true :"";
 			e.stopPropagation();
 			this.setTransition("");
 			this.setPagesIndex();
@@ -143,10 +163,11 @@
 		},
 		mouseup : function(e,fnMouseMove)
 		{
+			removeEventHandler(this.ele,this.isPc?"mousemove":"touchmove",fnMouseMove);
 			//未滑动页面时候跳出
 			if(!this.moved)
 			{	
-				removeEventHandler(this.ele,this.isPc?"mousemove":"touchmove",fnMouseMove);
+				//removeEventHandler(this.ele,this.isPc?"mousemove":"touchmove",fnMouseMove);
 				return false;
 			}
 			//防止切换页面期间多次点击，触发up事件取消定时器
@@ -154,80 +175,103 @@
 			{	
 				return false;
 			}
-			
-			var that = this;
+
+			/* slideMode为 static*/
+			if(this.slideMode =="static" && this.needToScroll)
+			{
+				//removeEventHandler(this.ele,this.isPc?"mousemove":"touchmove",fnMouseMove);
+				this.scrollByDirection();
+				this.needToScroll = false;
+				return false;
+			}
+
 			this.isMoving = true;
-			this.setTransition(transform);
-			//var offset = this.pages[this.pageNow-1].style.transform.match(/\-?[0-9]+\.?[0-9]*/g);
-			var offset = this.pages[this.pageNow-1].style[vendor+"Transform"].split("px, ")
+			this.slideMode !="static"?this.setTransition(transform):"";
 			clearTimeout(this.timer);
-			//var scale = 1/(1-this.scale);
+			//var offset = this.pages[this.pageNow-1].style.transform.match(/\-?[0-9]+\.?[0-9]*/g);
+			//this.direction == "next"?this.pageNow?this.pageNow-2
+			/*
+			var offset = this.pages[this.pageNow-1].style[vendor+"Transform"].split("px, ")
+			console.log(offset)
 			if(offset && Math.abs(offset[1])>this.threshold/(this.usingScale?scale:1))
+			*/
+			var offset = this.pages[this.direction == "next"?this.pageNow:this.pageNow-2].style[vendor+"Transform"].split("px, ");
+			var offsetH = cH,pageNowIndex = this.pageNow-1,pageNextIndex;
+			if(offset && cH - Math.abs(offset[1])>this.threshold)
 			{
 				//scroll next or previous page
 				if(this.direction == "next")
 				{
-					this.usingScale?setTranCss.call(this.pages[this.pageNow-1],(-cH)/scale,transform,this.scale):setTranCss.call(this.pages[this.pageNow-1],-cH,transform);
-					setTranCss.call(this.pages[this.pageNow],0);
-					that.pageNow++;
-				}else
-				{
-					this.usingScale?setTranCss.call(this.pages[this.pageNow-1],cH/scale,transform,this.scale):setTranCss.call(this.pages[this.pageNow-1],cH,transform);
-					setTranCss.call(this.pages[this.pageNow-2],0);
-					that.pageNow--;
+					pageNextIndex = this.pageNow;
+					offsetH = -cH;
+					this.pageNow++;
 				}
+				else
+				{
+					pageNextIndex = this.pageNow-2;
+					this.pageNow--;
+				}
+				this.usingScale?setTranCss(this.pages[pageNowIndex],offsetH/scale,transform,this.scale):setTranCss(this.pages[pageNowIndex],offsetH,transform);
+				setTranCss(this.pages[pageNextIndex],0);
 				this.scrollSuccess = true;
-				this.fn_startSlideToPage[this.pageNow-1]();
-			}else
+				this.fn_startSlideToPage[this.pageNow-1].call(this);
+			}
+			else
 			{
 				//revert to current page
 				if(this.direction == "next" && this.pageNow < this.pages.length)
 				{
-					setTranCss.call(this.pages[this.pageNow-1],0);
-					setTranCss.call(this.pages[this.pageNow],cH);
+					setTranCss(this.pages[this.pageNow-1],0);
+					setTranCss(this.pages[this.pageNow],cH);
 				}else if(this.pageNow >1)
 				{
-					setTranCss.call(this.pages[this.pageNow-1],0);
-					setTranCss.call(this.pages[this.pageNow-2],-cH);
+					setTranCss(this.pages[this.pageNow-1],0);
+					setTranCss(this.pages[this.pageNow-2],-cH);
 				}
 				this.scrollSuccess = false;
 			}
-
 			this.revertCallback();
-			removeEventHandler(this.ele,this.isPc?"mousemove":"touchmove",fnMouseMove);
+			//removeEventHandler(this.ele,this.isPc?"mousemove":"touchmove",fnMouseMove);
 		},
 		mousemove : function(evt)
 		{
+			
 			if(this.isMoving)
 			{
 				return false;
 			}
-			evt.preventDefault();
+
+			if(this.slideMode == "static")
+			{
+				this.setStaticSlideDatas(evt);
+				return false;
+			}
 			
 			this.isPc?"":(evt.clientY = evt.targetTouches[0].clientY);
+			evt.preventDefault();
 			if(this.originClientY < evt.clientY && this.pageNow >1)
 			{
-				this.direction != "prev" ? this.fn_touchSliding[this.pageNow-2]():"";
+				this.direction != "prev" ? this.fn_touchSliding[this.pageNow-2].call(this):"";
 
 				this.moved = true;
 				//direction previous
 				this.direction = "prev";
-				this.usingScale?setTranCss.call(this.pages[this.pageNow-1],(evt.clientY -this.originClientY)*(1-this.scale),"",(1-(1-this.scale)*(evt.clientY -this.originClientY)/cH)):setTranCss.call(this.pages[this.pageNow-1],(evt.clientY -this.originClientY));
+				this.usingScale?setTranCss(this.pages[this.pageNow-1],(evt.clientY -this.originClientY)*(1-this.scale),"",(1-(1-this.scale)*(evt.clientY -this.originClientY)/cH)):setTranCss(this.pages[this.pageNow-1],(evt.clientY -this.originClientY));
 				addClass(this.pages[this.pageNow-2],"active");
-				setTranCss.call(this.pages[this.pageNow-2],(-cH - (this.originClientY -evt.clientY )));
+				setTranCss(this.pages[this.pageNow-2],(-cH - (this.originClientY -evt.clientY )));
 				//for sake of compatibility,better UE
 				this.pageNow<this.pages.length?removeClass(this.pages[this.pageNow],'active'):"";
 			}
 			else if(this.originClientY > evt.clientY && this.pageNow < this.pages.length)
 			{
-				this.direction != "next"?this.fn_touchSliding[this.pageNow]():"";
+				this.direction != "next"?this.fn_touchSliding[this.pageNow].call(this):"";
 
 				this.moved = true;
 				//direction next
 				this.direction = "next";
-				this.usingScale?setTranCss.call(this.pages[this.pageNow-1],(evt.clientY -this.originClientY)*(1-this.scale),"",(1+(1-this.scale)*(evt.clientY -this.originClientY)/cH)):setTranCss.call(this.pages[this.pageNow-1],(evt.clientY -this.originClientY));
+				this.usingScale?setTranCss(this.pages[this.pageNow-1],(evt.clientY -this.originClientY)*(1-this.scale),"",(1+(1-this.scale)*(evt.clientY -this.originClientY)/cH)):setTranCss(this.pages[this.pageNow-1],(evt.clientY -this.originClientY));
 				addClass(this.pages[this.pageNow],"active");
-				setTranCss.call(this.pages[this.pageNow],cH - (this.originClientY - evt.clientY));
+				setTranCss(this.pages[this.pageNow],cH - (this.originClientY - evt.clientY));
 				//for sake of compatibility,better UE
 				this.pageNow>1?removeClass(this.pages[this.pageNow-2],'active'):"";
 			}else
@@ -237,11 +281,11 @@
 				if(this.pageNow == 1)
 				{
 					removeClass(this.pages[1],'active');
-					setTranCss.call(this.pages[0],0);
+					setTranCss(this.pages[0],0);
 
 				}else if(this.pageNow == this.pages.length)
 				{
-					setTranCss.call(this.pages[this.pages.length-1],0);
+					setTranCss(this.pages[this.pages.length-1],0);
 					removeClass(this.pages[this.pages.length-2],'active');
 				}
 			}
@@ -295,20 +339,20 @@
 			fn.call(this);
 			var that = this;
 			setTimeout(function(){
-					setTranCss.call(that.pages[that.pageNow-1],0,transform);
+					setTranCss(that.pages[that.pageNow-1],0,transform);
 				},30);
 			this.scrollSuccess = true;
 			this.revertCallback();
-			this.fn_startSlideToPage[this.pageNow-1]();
+			this.fn_startSlideToPage[this.pageNow-1].call(this);
 			return true;
 		},
 		toNextPage : function()
 		{
 			this.direction = "next";
 			return this._autoScrollPage(function(){
-				setTranCss.call(this.pages[this.pageNow],cH);
+				setTranCss(this.pages[this.pageNow],cH);
 				addClass(this.pages[this.pageNow],"active");
-				this.usingScale?setTranCss.call(this.pages[this.pageNow-1],(-cH)/scale,transform,this.scale):setTranCss.call(this.pages[this.pageNow-1],-cH,transform);
+				this.usingScale?setTranCss(this.pages[this.pageNow-1],(-cH)/scale,transform,this.scale):setTranCss(this.pages[this.pageNow-1],-cH,transform);
 				this.pageNow++;
 			});
 		},
@@ -316,9 +360,9 @@
 		{	
 			this.direction = "prev";
 			return this._autoScrollPage(function(){
-				this.usingScale?setTranCss.call(this.pages[this.pageNow-1],cH/scale,transform,this.scale):setTranCss.call(this.pages[this.pageNow-1],cH,transform);
+				this.usingScale?setTranCss(this.pages[this.pageNow-1],cH/scale,transform,this.scale):setTranCss(this.pages[this.pageNow-1],cH,transform);
 				addClass(this.pages[this.pageNow-2],"active");
-				setTranCss.call(this.pages[this.pageNow-2],-cH);
+				setTranCss(this.pages[this.pageNow-2],-cH);
 				this.pageNow--;
 			});
 		},
@@ -329,20 +373,53 @@
 						that.revertPages();
 						that.moved = false;
 						that.isMoving = false;
-						that.scrollSuccess?that.fn_afterSliding[that.pageNow-1]():"";
+						that.scrollSuccess?that.fn_afterSliding[that.pageNow-1].call(that):"";
 						this.timer = 0;
 						that.direction = "";
 						that.scrollSuccess = false;
+						that.needToScroll = false;
 					},this.duration);
+		},
+		setStaticSlideDatas : function(evt){
+			this.isPc?"":(evt.clientY = evt.targetTouches[0].clientY);
+			evt.preventDefault();
+			this.moved = true;
+			if(this.originClientY < evt.clientY  && this.pageNow >1 )
+			{
+				this.originClientY = evt.clientY;
+				this.direction == "next"?this.needToScroll = false:this.direction = "prev";
+			}
+			else if(this.originClientY > evt.clientY && this.pageNow < this.pages.length)
+			{
+				this.originClientY = evt.clientY;
+				this.direction == "prev"?this.needToScroll = false:this.direction = "next";
+			}
+			else{
+				this.moved = false;
+				this.needToScroll = false;
+				this.direction = "";
+			}
+		},
+		scrollByDirection : function(){
+			if(this.direction == "prev")
+			{
+				this.toPrevPage();
+			}
+			else if(this.direction == "next")
+			{
+				this.toNextPage();
+			}
 		}
 	}
 
+	ScrollPage.prototype._init.prototype = ScrollPage.prototype;
+
 	/**
-	 * [setTranCss description]
+	 * [setTranCssDefind description]
 	 * @param {[type]} offsetY    [description]
 	 * @param {[type]} transition [description]
 	 */
-	function setTranCss()
+	function setTranCssDefind()
 	{
 		var transStart = "translate3d(0px,", transEnd = ",0)";
 		if(arguments.length == 0)
@@ -363,7 +440,11 @@
 			this.style[vendor+"Transition"] = arguments[1];
 		}
 			this.style[vendor+"TransitionTimingFunction"] = "ease-in-out";
+	}
 
+	function setTranCss()
+	{
+		setTranCssDefind.apply(arguments[0],Array.prototype.slice.call(arguments).slice(1));
 	}
 
 	function addClass(ele, className)
@@ -428,4 +509,4 @@
 	}
 
 	window.ScrollPage = ScrollPage;
-})(undefined)
+})(window,undefined)
