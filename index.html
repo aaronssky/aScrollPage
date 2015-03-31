@@ -11,7 +11,7 @@
 	<meta http-equiv="pragram" content="no-cache">
 	<LINK href="favicon.ico" type="image/x-icon" rel=icon>
 	<LINK href="favicon.ico" type="image/x-icon" rel="shortcut icon">
-	<script type="text/javascript" src="aron-ScrollPage.js"></script>
+	<script type="text/javascript" src="aScrollPage.min.js"></script>
 	<script type="text/javascript">
 		var mengvalue = -1;
 		//if(mengvalue<0){mengvalue=0;}
@@ -55,17 +55,14 @@
 			55%  {bottom:90px;opacity: 1}
 			100% {bottom:100px;opacity: 0}
 		}
-		.p1{background-color: gray;background: url(n_5417dc9238d0d.jpg);}
-		.p2{background-color: green;background: url(n_5417dc9645d0c.jpg);}
-		.p3{background-color: lightblue;background: url(n_5417dc993abcb.jpg);}
-		.p4{background-color: red;background: url(n_5417dc9238d0d.jpg);}
+		.p1{background-color: gray;background: url(one_bg.jpg);}
+		.p2{background-color: green;}
+		.p3{background-color: lightblue;}
+		.p4{background-color: green;}
 		.p5{background-color: red;}
 		.p6{background-color: blue;}
 		.p7{background-color: green;}
-		.p8{background-color: red;background: url(n_5417dc9238d0d.jpg);}
-		.p9{background-color: red;background: url(n_5417dc9238d0d.jpg);}
-
-		#coverLayer{width:100%;height: 100%;position: fixed;z-index: 0;top:0;left: 0;}
+		.p8{background-color: red;}
 
 	</style>
 </head>
@@ -75,44 +72,19 @@
 window.onload = function()
 {
 	var obj = document.getElementById("scrollPage");
-	var config = {
-			duration :300,//页面切换时间
-			slideMode : "normal",//normal->触摸滑动时候页面跟随移动,static->触摸滑动时候页面静止，
-			mode : "scale",//scale->换页缩放,normal->无缩放平移换页,static->换页时当前页不移动
-			scale : "0.7",//缩放比例
-			threshold:100,//换页临界值
-			fn_initCallback : function(){
-				console.log("自定义初始化后触发");
-			},
-			fn_touchSliding://回调函数，触摸移动时候触发
-				['','',function(){
-				console.log(33333333333333)}
-				],
-			fn_afterSliding://回调函数，移动换页结束后触发
-				[function(){
-				console.log("123123");
-				},function(){
-				console.log("完成跳到第二页");
-				}],
-			fn_startSlideToPage://回调函数，触摸滑动放开手指并开始换页时触发
-			[function(){console.log("开始移动至第一页")}]
-	};
-	sp = ScrollPage(obj).init(config);
-
-	document.getElementById("ab").onclick = function(){alert(1)}
+	aScrollPage(obj).init();
 }
 
 </script>
 <div id="scrollPage" class="scrollPage">
-	<div class="page p1 active"><div style="width:500px;height:500px;background-color:green" id="ab"></div></div>
-	<div class="page p2"><input type=""></div>
+	<div class="page p1 active">1</div>
+	<div class="page p2">2</div>
 	<div class="page p3">3</div>
 	<div class="page p4">4</div>
-	<div class="page p4">4</div>
-	<div class="page p4">4</div>
-	<div class="page p4">4</div>
-	<div class="page p4">4</div>
-	<div class="page p4">4</div>
+	<div class="page p5">5</div>
+	<div class="page p6">6</div>
+	<div class="page p7">7</div>
+	<div class="page p8">8</div>
 </div>
 <div class="arrow">
 		<p></p>
